@@ -1,5 +1,5 @@
 # your node version
-FROM node:20-alpine AS deps-prod
+FROM node:24-alpine AS deps-prod
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ COPY . .
 
 RUN npm run build
 
-FROM node:20-alpine AS prod
+FROM node:24-alpine AS prod
 
 WORKDIR /app
 
