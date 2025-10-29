@@ -1,0 +1,6 @@
+services:
+  app:
+    ports:
+      - "5000:5000"
+      - "9230:9230"
+    command: ["node", "--inspect=0.0.0.0:9230", "dist/app.js"]

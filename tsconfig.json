@@ -9,6 +9,7 @@
         "skipLibCheck": true,
         "rootDir": "./src",
         "outDir": "./dist",
+        "sourceMap": true,
         "paths": {
             "#*": [
                 "./src/*",
