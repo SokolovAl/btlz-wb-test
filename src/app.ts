@@ -20,7 +20,7 @@ async function main() {
         console.log("Synchronization completed");
 
         try {
-            console.log("Exporting data to Google Sheets...");
+            console.log("Exporting data to Google Sheets");
             await pushToAllSheets();
             console.log("Google Sheets export completed successfully");
         } catch (err) {
