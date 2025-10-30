@@ -28,8 +28,8 @@ export async function upsertTariff(
             date,
             warehouse_id: warehouseId,
             ...numeric,
-            source_dt_next_box: meta.dtNextBox?.trim() || null,
-            source_dt_till_max: meta.dtTillMax?.trim() || null,
+            source_dt_next_box: meta.dtNextBox,
+            source_dt_till_max: meta.dtTillMax,
         })
         .onConflict(["date", "warehouse_id"])
         .merge({
