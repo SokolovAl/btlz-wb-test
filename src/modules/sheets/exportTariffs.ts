@@ -1,10 +1,16 @@
 import type { Knex } from "knex";
-import { makeSheetsClient } from "./gSheetsClient.js";
 import knex from "#postgres/knex.js";
+import { makeSheetsClient } from "./gSheetsClient.js";
+
+async function getSpreadsheetIdsFromDB(tr?: Knex.Transaction): Promise<string[]> {
+    const k = tr ?? knex;
+    const rows = await k("spreadsheets").select("spreadsheet_id");
+    return rows.map((r) => r.spreadsheet_id).filter(Boolean);
+}
 
 export async function fetchTodayTariffs(tr?: Knex.Transaction) {
     const k = tr ?? knex;
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const today = new Date().toISOString().slice(0, 10);
 
     const rows = await k("wb_tariffs_daily as t")
         .join("warehouses as w", "w.id", "t.warehouse_id")
@@ -42,6 +48,7 @@ export function toSheetValues(rows: any[]): (string | number)[][] {
 export async function pushToSheet(spreadsheetId: string, values: (string | number)[][]) {
     const sheets = makeSheetsClient();
     const range = "stocks_coefs";
+
     await sheets.spreadsheets.values.clear({ spreadsheetId, range });
 
     await sheets.spreadsheets.values.update({
@@ -53,18 +60,26 @@ export async function pushToSheet(spreadsheetId: string, values: (string | numbe
 }
 
 export async function pushToAllSheets() {
-    const ids = (process.env.GSHEETS_IDS ?? "")
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
+    const ids = await getSpreadsheetIdsFromDB();
 
-    if (ids.length === 0) throw new Error("GSHEETS_IDS is empty");
+    if (ids.length === 0) {
+        console.warn("Sheets: No spreadsheet IDs found in DB");
+        return;
+    }
 
     const rows = await fetchTodayTariffs();
     const values = toSheetValues(rows);
 
+    console.log(`Sheets: Preparing to export ${rows.length} rows to ${ids.length} sheet(s)`);
+
     for (const id of ids) {
-        await pushToSheet(id, values);
-        console.log(`[sheets] pushed ${rows.length} rows → ${id}`);
+        try {
+            await pushToSheet(id, values);
+            console.log(`Sheets: Updated sheet ${id}, rows: ${rows.length}`);
+        } catch (err) {
+            console.error(`Sheets: Failed to update sheet ${id}:`, err);
+        }
     }
+
+    console.log("Sheets: Export completed for all sheets.");
 }
